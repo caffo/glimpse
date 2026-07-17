@@ -1,0 +1,17 @@
+[Unit]
+Description=Glimpse image API (200x200 1-bit PNG <=50KB)
+After=network.target
+
+[Service]
+Type=simple
+User=youruser
+# Standard Unix TZ, used by mode=clock. Any IANA name; also settable in .env.
+Environment=TZ=UTC
+WorkingDirectory=/home/youruser/glimpse/server
+EnvironmentFile=/home/youruser/glimpse/server/.env
+ExecStart=/home/youruser/glimpse/server/venv/bin/python /home/youruser/glimpse/server/app.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

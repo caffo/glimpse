@@ -1,0 +1,26 @@
+{
+  "name": "audio",
+  "version": "1.0.0",
+  "description": "ES8311 audio playback via the vendored Espressif esp_codec_dev framework (Waveshare S3_ePaper_1_54 board profile).",
+  "build": {
+    "srcFilter": [
+      "+<*>",
+      "-<codec_board/lcd_init.c>"
+    ],
+    "includeDir": ".",
+    "flags": [
+      "-DCONFIG_CODEC_ES8311_SUPPORT=1",
+      "-DCONFIG_CODEC_ES7210_SUPPORT=1",
+      "-I lib/audio",
+      "-I lib/audio/codec_board",
+      "-I lib/audio/codec_board/drv",
+      "-I lib/audio/esp_codec_dev",
+      "-I lib/audio/esp_codec_dev/include",
+      "-I lib/audio/esp_codec_dev/interface",
+      "-I lib/audio/esp_codec_dev/device/include",
+      "-I lib/audio/esp_codec_dev/device/priv_include",
+      "-I lib/audio/esp_codec_dev/device/es8311",
+      "-I lib/audio/esp_codec_dev/device/es7210"
+    ]
+  }
+}

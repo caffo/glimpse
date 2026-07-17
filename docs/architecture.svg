@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 764 244" width="764" height="244"
+     font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" role="img"
+     aria-labelledby="title desc">
+  <title id="title">How Glimpse fits together</title>
+  <desc id="desc">The glimpse CLI posts to the server, which writes a single
+    200 by 200 1-bit PNG at /image.png. A gallery thread rotates that same file
+    on an interval. The ESP32-S3 wakes, fetches that one URL, draws it, and
+    sleeps.</desc>
+
+  <style>
+    .ink   { fill: #1f2328; }
+    .paper { fill: #ffffff; }
+    .line  { stroke: #1f2328; }
+    .dim   { fill: #656d76; }
+    .dimline { stroke: #656d76; }
+    @media (prefers-color-scheme: dark) {
+      .ink   { fill: #e6edf3; }
+      .paper { fill: #0d1117; }
+      .line  { stroke: #e6edf3; }
+      .dim   { fill: #8b949e; }
+      .dimline { stroke: #8b949e; }
+    }
+    .box    { fill: none; stroke-width: 1.5; }
+    .lbl    { font-size: 13px; font-weight: 600; }
+    .sub    { font-size: 10.5px; }
+    .edge   { stroke-width: 1.5; fill: none; }
+    .edgelbl{ font-size: 10px; }
+  </style>
+
+  <rect class="paper" width="764" height="244"/>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" class="ink"/>
+    </marker>
+    <marker id="arrowdim" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" class="dim"/>
+    </marker>
+  </defs>
+
+  <!-- CLI -->
+  <rect class="box line" x="16" y="96" width="132" height="56" rx="4"/>
+  <text class="ink lbl" x="82" y="120" text-anchor="middle">glimpse</text>
+  <text class="dim sub" x="82" y="137" text-anchor="middle">the CLI</text>
+
+  <!-- CLI -> server -->
+  <line class="edge line" x1="148" y1="124" x2="238" y2="124" marker-end="url(#arrow)"/>
+  <text class="ink edgelbl" x="193" y="107" text-anchor="middle">POST</text>
+  <text class="ink edgelbl" x="193" y="118" text-anchor="middle">/upload</text>
+
+  <!-- server -->
+  <rect class="box line" x="240" y="60" width="180" height="128" rx="4"/>
+  <text class="ink lbl" x="330" y="84" text-anchor="middle">server</text>
+  <text class="dim sub" x="330" y="103" text-anchor="middle">resize · dither · 1-bit</text>
+  <text class="dim sub" x="330" y="117" text-anchor="middle">flux · llm · weather</text>
+  <text class="dim sub" x="330" y="131" text-anchor="middle">markdown · clock</text>
+
+  <!-- gallery rotation, self-loop under the server -->
+  <path class="edge dimline" d="M 268 188 C 268 214, 392 214, 392 188"
+        marker-end="url(#arrowdim)" stroke-dasharray="3 3"/>
+  <text class="dim edgelbl" x="330" y="228" text-anchor="middle">gallery rotates it every N seconds</text>
+
+  <!-- server -> image -->
+  <line class="edge line" x1="420" y1="124" x2="504" y2="124" marker-end="url(#arrow)"/>
+  <text class="ink edgelbl" x="462" y="116" text-anchor="middle">writes</text>
+
+  <!-- the one file -->
+  <rect class="box line" x="506" y="88" width="102" height="72" rx="4"/>
+  <text class="ink lbl" x="557" y="112" text-anchor="middle">/image.png</text>
+  <text class="dim sub" x="557" y="129" text-anchor="middle">200×200</text>
+  <text class="dim sub" x="557" y="143" text-anchor="middle">1-bit ≤50 KB</text>
+
+  <!-- device -->
+  <rect class="box line" x="656" y="88" width="92" height="72" rx="4"/>
+  <rect class="box line" x="672" y="102" width="60" height="34" rx="2"/>
+  <text class="dim sub" x="702" y="152" text-anchor="middle">ESP32-S3</text>
+
+  <!-- device -> image (fetch), routed under both -->
+  <path class="edge line" d="M 702 160 L 702 186 L 557 186 L 557 160"
+        marker-end="url(#arrow)"/>
+  <text class="ink edgelbl" x="630" y="200" text-anchor="middle">GET, each wake</text>
+</svg>

@@ -1,0 +1,201 @@
+#!/usr/bin/env bash
+# Push an image, image URL, Markdown, or an AI prompt to the e-paper dashboard.
+#
+# Usage:
+#   ./glimpse photo.jpg                  # local image file -> uploaded
+#   ./glimpse https://example.com/x.png  # image URL -> fetched & uploaded
+#   ./glimpse "# Hello\n- a\n- b"         # Markdown -> rendered (headers/bullets)
+#   ./glimpse -m flux "a mountain lake"  # AI-generated image (FLUX)
+#   ./glimpse -m llm "capital of Peru?"  # ask DeepSeek, render concise answer
+#   ./glimpse -m weather "rio, sp"       # clima real por cidade (Open-Meteo)
+#   ./glimpse -m markdown "plain text"   # force markdown render
+#   ./glimpse -m text "plain text"       # simple centered plain-text canvas
+#   echo "# Hi" | ./glimpse -            # read text from stdin (markdown)
+#   ./glimpse                            # no args -> show help
+#   ./glimpse --reset                    # reset to default image
+#
+# Auto-detection (when -m is not given and input is not a file/URL):
+#   looks like Markdown (#, -, *, |, backticks, links) -> mode=markdown
+#   otherwise                                          -> mode=flux (a prompt)
+#
+# Config via env:
+#   API   base URL of your glimpse server (required)
+#   GLIMPSE_TOKEN upload token (required for writes)
+set -euo pipefail
+
+API="${API:-}"
+# ponytail: EINK_DASH_TOKEN kept as a fallback so existing shells don't break.
+TOKEN="${GLIMPSE_TOKEN:-${EINK_DASH_TOKEN:-}}"
+
+usage() {
+  cat <<'EOF'
+glimpse - push an image, URL, Markdown, AI prompt, question or weather
+          to the 200x200 e-paper dashboard.
+
+USAGE
+  glimpse [-m MODE] [-k] [-l] [-u] INPUT
+  glimpse                 show this help (no arguments)
+  glimpse --reset         reset to the default image
+  echo TEXT | glimpse -   read text from stdin
+
+MODES (-m / --mode, also -m=MODE / -mode=MODE / --mode=MODE)
+  markdown   render Markdown (headers, bullets, bold) - crisp 1-bit
+  flux       AI-generated image from a prompt (FLUX, needs FAL_KEY)
+  llm        ask DeepSeek, render concise answer (needs DEEPSEEK_KEY)
+  weather    real current weather per city via Open-Meteo (free)
+  text       simple centered plain-text canvas
+  clock      current time as Markdown, in the server's TZ (needs no input)
+
+GALLERY (-k/--keep saves the push to a rotating gallery)
+  -k, --keep            also save this push to the gallery. The server then
+                        rotates /image.png among saved entries every N seconds,
+                        randomly, never repeating twice in a row. Image uploads
+                        are cached; flux/llm/weather/markdown recipes are
+                        REGENERATED fresh on each show (e.g. live weather).
+  -l, --lock            after this push, freeze the screen on it (pause
+                        rotation). Combine with -k to also save it.
+  -u, --urgent          mark this push urgent: also writes /urgent.txt = true
+                        (any later non-urgent push or rotation resets it to
+                        false). Combine with the other flags.
+  --lock                pause rotation now, holding the current image
+  --unlock              resume rotation (needs no other input)
+  --interval SECONDS    set rotation interval (min 5)
+  --gallery             list saved gallery entries
+  --gallery-clear       remove all gallery entries (stops rotation)
+
+AUTO-DETECTION (when -m is omitted and input is not a file/URL)
+  existing file or http(s):// URL  -> image upload
+  looks like Markdown (#, -, *, |, links, backticks) -> markdown
+  otherwise                        -> flux (treated as an image prompt)
+
+EXAMPLES
+  glimpse photo.jpg
+  glimpse https://example.com/x.png
+  glimpse '# Today\n- buy milk\n- **call** mom'
+  glimpse -m flux 'a mountain lake at dusk'
+  glimpse -k -m flux 'a mountain lake at dusk'   # add to gallery
+  glimpse -k -m weather 'rio, sp'                 # live weather, rotates
+  glimpse -l -m text 'BRB'                        # show it and freeze
+  glimpse -u -m text 'FIRE!'                       # urgent -> /urgent.txt=true
+  glimpse --lock                                  # pause rotation now
+  glimpse --unlock                                # resume rotation
+  glimpse --interval 600                          # rotate every 10 min
+  glimpse --gallery                               # list entries
+  glimpse --gallery-clear                         # wipe gallery
+  glimpse -m llm 'capital of Peru?'
+
+ENVIRONMENT
+  API            base URL of your glimpse server, e.g. https://dash.example.com
+  GLIMPSE_TOKEN  upload token (required for writes; EINK_DASH_TOKEN also works)
+EOF
+}
+
+# No arguments at all -> show help (instead of doing something destructive).
+if [[ $# -eq 0 || "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage; exit 0
+fi
+
+if [[ -z "$API" ]]; then
+  echo "error: set API env var to your glimpse server, e.g." >&2
+  echo "  export API=https://dash.example.com" >&2
+  echo "run 'glimpse --help' for usage" >&2
+  exit 1
+fi
+
+if [[ -z "$TOKEN" ]]; then
+  echo "error: set GLIMPSE_TOKEN env var to your upload token" >&2
+  echo "run 'glimpse --help' for usage" >&2
+  exit 1
+fi
+
+auth=(-H "X-Upload-Token: $TOKEN")
+
+# Gallery management subcommands (no INPUT needed).
+case "${1:-}" in
+  --gallery)
+    curl -fsS "$API/gallery"; echo; exit 0 ;;
+  --gallery-clear)
+    curl -fsS "${auth[@]}" -X POST "$API/gallery/clear"; echo; exit 0 ;;
+  --lock)
+    curl -fsS "${auth[@]}" -X POST "$API/gallery/lock"; echo; exit 0 ;;
+  --unlock)
+    curl -fsS "${auth[@]}" -X POST "$API/gallery/unlock"; echo; exit 0 ;;
+  --interval)
+    curl -fsS "${auth[@]}" --data-urlencode "interval=${2:-}" \
+      "$API/gallery/interval"; echo; exit 0 ;;
+  --interval=*)
+    curl -fsS "${auth[@]}" --data-urlencode "interval=${1#*=}" \
+      "$API/gallery/interval"; echo; exit 0 ;;
+esac
+
+mode=""
+keep=""
+lock=""
+urgent=""
+# Parse leading options in any order: -m MODE / --mode MODE / -m=MODE /
+# -mode=MODE / --mode=MODE, -k / --keep, -l / --lock, -u / --urgent.
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -m|--mode)            mode="${2:-}"; shift 2 ;;
+    -m=*|--mode=*|-mode=*) mode="${1#*=}"; shift ;;
+    -k|--keep)            keep=1; shift ;;
+    -l|--lock)            lock=1; shift ;;
+    -u|--urgent)          urgent=1; shift ;;
+    *) break ;;
+  esac
+done
+
+arg="${1:-}"
+
+valid_modes="markdown flux llm weather text clock"
+if [[ -n "$mode" && " $valid_modes " != *" $mode "* ]]; then
+  echo "error: unknown mode '$mode' (valid: $valid_modes)" >&2
+  exit 1
+fi
+
+send_image_file() {  # $1=path
+  local extra=()
+  [[ -n "$keep" ]] && extra+=(-F "keep=1")
+  [[ -n "$lock" ]] && extra+=(-F "lock=1")
+  [[ -n "$urgent" ]] && extra+=(-F "urgent=1")
+  curl -fsS "${auth[@]}" -F "image=@$1" "${extra[@]}" "$API/upload"
+}
+send_text() {  # $1=text  $2=mode
+  local extra=()
+  [[ -n "$keep" ]] && extra+=(--data-urlencode "keep=1")
+  [[ -n "$lock" ]] && extra+=(--data-urlencode "lock=1")
+  [[ -n "$urgent" ]] && extra+=(--data-urlencode "urgent=1")
+  curl -fsS "${auth[@]}" \
+    --data-urlencode "text=$1" --data-urlencode "mode=$2" \
+    "${extra[@]}" "$API/upload"
+}
+
+# Heuristic: does this string look like Markdown vs a plain image prompt?
+looks_like_markdown() {
+  grep -qE '(^|\n)\s*#{1,6}\s|(^|\n)\s*[-*+]\s|(^|\n)\s*[0-9]+\.\s|\*\*|`|\[.*\]\(.*\)|(^|\n)\s*>|\|' <<<"$1"
+}
+
+resolve_text_mode() {  # echoes the mode to use for a text string $1
+  if [[ -n "$mode" ]]; then echo "$mode"; return; fi
+  if looks_like_markdown "$1"; then echo markdown; else echo flux; fi
+}
+
+if [[ "$arg" == "--reset" || ( -z "$arg" && -z "$mode" ) ]]; then
+  # explicit --reset (or options-only with no input) -> reset to default
+  curl -fsS "${auth[@]}" -X POST "$API/upload"
+elif [[ "$arg" == "-" ]]; then
+  txt="$(cat)"
+  send_text "$txt" "$(resolve_text_mode "$txt")"
+elif [[ -z "$mode" && -f "$arg" ]]; then
+  send_image_file "$arg"
+elif [[ -z "$mode" && "$arg" =~ ^https?:// ]]; then
+  # fetch the image locally, then upload
+  tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
+  curl -fsSL "$arg" -o "$tmp"
+  send_image_file "$tmp"
+else
+  # interpret printf escapes (\n etc.) so inline markdown is convenient
+  txt="$(printf '%b' "$arg")"
+  send_text "$txt" "$(resolve_text_mode "$txt")"
+fi
+echo
