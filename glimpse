@@ -7,7 +7,7 @@
 #   ./glimpse "# Hello\n- a\n- b"         # Markdown -> rendered (headers/bullets)
 #   ./glimpse -m flux "a mountain lake"  # AI-generated image (FLUX)
 #   ./glimpse -m llm "capital of Peru?"  # ask DeepSeek, render concise answer
-#   ./glimpse -m weather "rio, sp"       # clima real por cidade (Open-Meteo)
+#   ./glimpse -m weather "rio, sp"       # real weather per city (Open-Meteo)
 #   ./glimpse -m markdown "plain text"   # force markdown render
 #   ./glimpse -m text "plain text"       # simple centered plain-text canvas
 #   echo "# Hi" | ./glimpse -            # read text from stdin (markdown)

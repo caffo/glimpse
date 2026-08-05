@@ -162,21 +162,21 @@ img { max-width: 100%; }
 """
 
 
-# Códigos WMO -> descrição curta em pt-BR.
+# WMO codes -> short description.
 WMO = {
-    0: "Limpo", 1: "Predom. limpo", 2: "Parc. nublado", 3: "Nublado",
-    45: "Névoa", 48: "Névoa", 51: "Garoa", 53: "Garoa", 55: "Garoa forte",
-    56: "Garoa gelada", 57: "Garoa gelada", 61: "Chuva fraca", 63: "Chuva",
-    65: "Chuva forte", 66: "Chuva gelada", 67: "Chuva gelada",
-    71: "Neve fraca", 73: "Neve", 75: "Neve forte", 77: "Granizo",
-    80: "Pancadas", 81: "Pancadas", 82: "Pancadas fortes", 85: "Neve",
-    86: "Neve", 95: "Tempestade", 96: "Tempestade/granizo",
-    99: "Tempestade/granizo",
+    0: "Clear", 1: "Mostly clear", 2: "Partly cloudy", 3: "Cloudy",
+    45: "Fog", 48: "Fog", 51: "Drizzle", 53: "Drizzle", 55: "Heavy drizzle",
+    56: "Freezing drizzle", 57: "Freezing drizzle", 61: "Light rain", 63: "Rain",
+    65: "Heavy rain", 66: "Freezing rain", 67: "Freezing rain",
+    71: "Light snow", 73: "Snow", 75: "Heavy snow", 77: "Hail",
+    80: "Showers", 81: "Showers", 82: "Heavy showers", 85: "Snow",
+    86: "Snow", 95: "Thunderstorm", 96: "Thunderstorm/hail",
+    99: "Thunderstorm/hail",
 }
 
 
 def _norm(s):
-    """lowercase sem acentos, para comparar nomes de cidade."""
+    """Lowercase without accents, for comparing city names."""
     return "".join(
         c for c in unicodedata.normalize("NFD", (s or "").lower())
         if unicodedata.category(c) != "Mn"
@@ -184,8 +184,8 @@ def _norm(s):
 
 
 def _best_match(query, results):
-    """Escolhe o resultado cujo nome bate exatamente com a busca (sem
-    acentos); empata pela maior população. Senão, o primeiro."""
+    """Pick the result whose name exactly matches the query (accents
+    stripped); break ties by largest population. Otherwise, the first."""
     q = _norm(query)
     exact = [r for r in results if _norm(r.get("name")) == q]
     if exact:
@@ -200,19 +200,19 @@ def _get_json(url):
 
 
 def _weather_markdown(cities_text):
-    """Clima real por cidade via Open-Meteo (grátis, sem chave)."""
+    """Real weather per city via Open-Meteo (free, no API key)."""
     cities = [c.strip() for c in re.split(r"[,;\n]+", cities_text) if c.strip()]
     if not cities:
         cities = [cities_text.strip()]
-    lines = ["# Clima"]
-    for city in cities[:5]:  # cabe ~5 cidades no painel
+    lines = ["# Weather"]
+    for city in cities[:5]:  # ~5 cities fit on the panel
         geo = _get_json(
             "https://geocoding-api.open-meteo.com/v1/search?count=10"
-            "&language=pt&format=json&name=" + urllib.parse.quote(city)
+            "&language=en&format=json&name=" + urllib.parse.quote(city)
         )
         results = geo.get("results") or []
         if not results:
-            lines.append(f"**{city}**: nao encontrada")
+            lines.append(f"**{city}**: not found")
             continue
         loc = _best_match(city, results)
         lat, lon = loc["latitude"], loc["longitude"]
