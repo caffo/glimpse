@@ -445,7 +445,7 @@ server/            Flask API
   app.py           the whole server
   prepare_image.py e-paper image prep (resize-fill, contrast, 1-bit dither)
   imgapi.service   systemd unit
-docs/              design notes and plans
+docs/              architecture diagram
 ```
 
 The server used to live in its own repo. Merged it here so the firmware, the API
@@ -453,4 +453,4 @@ it talks to, and the CLI that drives them move together. Fewer repos to chase.
 
 ## License
 
-MIT
+Public domain, under [The Unlicense](LICENSE). Do whatever you want with it.
