@@ -33,7 +33,7 @@ Three pieces, one repo:
 
 | Part | What it is |
 |------|-----------|
-| [`firmware/`](#firmware) | ESP32-S3 firmware for the Waveshare 1.54" e-paper board. Wakes, fetches a PNG, shows it, sleeps. |
+| [`firmware/`](#firmware) | ESP32-S3 firmware for the [Waveshare 1.54" e-paper board](https://www.waveshare.com/esp32-s3-epaper-1.54.htm). Wakes, fetches a PNG, shows it, sleeps. |
 | [`server/`](#server) | Flask API that turns *anything* into a canonical 200×200 1-bit PNG served at one fixed URL. |
 | [`glimpse`](#the-glimpse-cli) | Shell CLI that pushes to the server. |
 
