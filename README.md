@@ -1,11 +1,6 @@
 # Glimpse
 *A dumb little frame on my desk. I tell it what to show.*
 
-<img width="320" height="426" alt="glimpse" src="https://github.com/user-attachments/assets/1ecc79c2-285d-4e9f-8384-f9586b2e0eef"/>
-<br/>
-<br/>
-<br/>
-
 
 200×200 pixels of black-and-white e-paper. A photo, some Markdown, live weather,
 something FLUX come up — pushed from one line in the shell.
