@@ -9,10 +9,6 @@ All notable changes to this project are documented here. The format follows
 ### Added
 
 - This changelog.
-- A prebuilt firmware image attached to the GitHub release. It is built with the
-  placeholder values from `firmware/.env.example`, so it does not join a
-  network. For a working device, build from source with your own
-  `firmware/.env`.
 
 ## [0.10.0] - 2026-11-19
 
