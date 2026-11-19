@@ -2,7 +2,8 @@
 
 A small e-paper display that does almost nothing. It knows one URL, fetches it, and draws whatever comes back. No menu, no app, no settings screen. Everything interesting happens on the server: resizing, dithering, and generating the image in the first place, whether from a photo or an LLM. That split is the point. The firmware stays small enough to read in one sitting and never needs reflashing, so all my experimenting happens server-side and the thing on the wall just keeps working.
 
-Then the build steps, how to flash it, and the server setup.
+
+<img width="469" height="600" alt="glimpse" src="https://github.com/user-attachments/assets/733b4b60-b3b0-4a85-a6df-da097a06d98c" />
 
 
 200×200 pixels of black-and-white e-paper. A photo, some Markdown, live weather,
