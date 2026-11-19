@@ -10,6 +10,10 @@ All notable changes to this project are documented here. The format follows
 
 - This changelog.
 
+### Changed
+
+- Expanded the project description at the top of the README.
+
 ## [0.10.0] - 2026-11-19
 
 First public release, tagged `v0.10`.
